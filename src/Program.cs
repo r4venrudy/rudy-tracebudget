@@ -8,7 +8,8 @@ internal static class Program
             return 2;
         try
         {
-            Console.WriteLine(Otlp.Read(args[0]).Count);
+            foreach (var trace in Analysis.Analyze(Otlp.Read(args[0])))
+                Console.WriteLine($"{trace.Id} spans={trace.Spans.Length} qualified={trace.Qualified}");
             return 0;
         }
         catch (Exception error) when (error is IOException or InvalidDataException or System.Text.Json.JsonException)
