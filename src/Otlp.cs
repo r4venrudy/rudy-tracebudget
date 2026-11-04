@@ -23,7 +23,15 @@ internal static class Otlp
         stream.ReadExactly(bytes);
         if (stream.ReadByte() != -1)
             throw new InvalidDataException("OTLP input size changed during read.");
-        return Parse(bytes);
+        try
+        {
+            return Parse(bytes);
+        }
+        catch (InvalidOperationException error)
+        {
+            // JsonDocument validates string contents lazily when decoded.
+            throw new InvalidDataException("Invalid text in OTLP JSON.", error);
+        }
     }
 
     internal static List<Span> Parse(ReadOnlyMemory<byte> bytes)
@@ -137,7 +145,8 @@ internal static class Otlp
             JsonValueKind.Number => value.GetRawText(),
             _ => null
         };
-        if (!ulong.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var result))
+        if (text is null || text.Length == 0 || !text.All(char.IsAsciiDigit) ||
+            !ulong.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var result))
             throw new InvalidDataException($"Invalid unsigned integer for {name}.");
         return result;
     }
