@@ -1,0 +1,5 @@
+bin/
+obj/
+stage/
+dist/
+__pycache__/
