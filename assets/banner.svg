@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-labelledby="title">
+  <title id="title">Rudy TraceBudget · offline trace forensics</title>
+  <rect width="1200" height="300" rx="18" fill="#0c121a"/>
+  <path d="M2 0v300" stroke="#55e0b6" stroke-width="5"/>
+  <g fill="#55e0b6" font-family="monospace" font-size="15" letter-spacing="3">
+    <text x="55" y="54">RUDY SYSTEMS / DISTRIBUTED TRACING</text>
+    <text x="55" y="260">C# / .NET 10 / DEVELOPER PREVIEW</text>
+  </g>
+  <text x="55" y="125" fill="#edf6ff" font-family="system-ui,sans-serif" font-size="58" font-weight="700">Rudy TraceBudget</text>
+  <text x="57" y="178" fill="#a7c5dc" font-family="system-ui,sans-serif" font-size="25">Measure overlap. Gate root latency.</text>
+  <path d="M55 222h1090" stroke="#26394b"/>
+  <g fill="#132332" stroke="#2f4c60">
+    <rect x="790" y="61" width="332" height="28" rx="6"/>
+    <rect x="824" y="105" width="150" height="27" rx="6"/>
+    <rect x="895" y="148" width="185" height="27" rx="6"/>
+  </g>
+  <path d="M896 95v88m77-88v88" stroke="#55e0b6" stroke-dasharray="3 5" opacity=".7"/>
+  <g fill="#55e0b6" font-family="monospace" font-size="13" text-anchor="middle">
+    <text x="956" y="80">ROOT SPAN</text>
+    <text x="899" y="123">CHILD A</text>
+    <text x="987" y="166">CHILD B</text>
+  </g>
+</svg>
