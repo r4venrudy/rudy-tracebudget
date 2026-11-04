@@ -1,0 +1,80 @@
+name: Release verified packages
+on:
+  push:
+    tags: ['v0.1.0-preview']
+permissions:
+  contents: read
+concurrency:
+  group: tracebudget-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            rid: linux-x64
+            target: linux-x64
+          - os: windows-2022
+            rid: win-x64
+            target: windows-x64
+          - os: macos-15
+            rid: osx-arm64
+            target: macos-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 18
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: '10.0.403'
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+      - run: dotnet publish src/TraceBudget.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o stage/bin --source https://api.nuget.org/v3/index.json
+      - name: Test self-contained installation before packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin=stage/bin/tracebudget
+          if [[ "$RUNNER_OS" == "Windows" ]]; then bin="$bin.exe"; fi
+          python tests/integration.py "$bin"
+          python tools/package.py stage '${{ matrix.target }}'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: package-${{ matrix.target }}
+          path: dist/tracebudget-0.1.0-preview-${{ matrix.target }}.*
+          if-no-files-found: error
+  publish:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: package-*
+          path: release-assets
+          merge-multiple: true
+      - name: Verify and publish the preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          (cd release-assets && sha256sum tracebudget-0.1.0-preview-* > SHA256SUMS.txt)
+          python .github/scripts/release_checksums.py release-assets
+          python .github/scripts/release_guard.py release-assets
+          gh release create "$GITHUB_REF_NAME" release-assets/tracebudget-* release-assets/SHA256SUMS.txt --verify-tag --title "Rudy TraceBudget $GITHUB_REF_NAME" --notes-file docs/RELEASE.md --prerelease
